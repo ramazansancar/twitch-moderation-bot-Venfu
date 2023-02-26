@@ -29,20 +29,37 @@ module.exports = (username, accessToken, channel) => {
     // Remove whitespace from chat message
     const commandName = msg.trim();
 
-    // If the command is known, let's execute it
-    if (commandName === "!dice") {
-      const num = rollDice();
-      client.say(target, `You rolled a ${num}`);
-      console.log(`* Executed ${commandName} command`);
-    } else {
-      console.log(`* Unknown command ${commandName}`);
+    if (commandName === "!cmd") {
+      client.say(target, cmd());
+    }
+    if (commandName === "!dé") {
+      client.say(target, rollDice(6));
+    }
+    if (commandName.match(/^\!dé [0-9]*$/gim)) {
+      client.say(target, rollDice(commandName.substr(4)));
+    }
+    if (commandName === "!ca") {
+      client.say(target, ca());
     }
   }
 
-  // Function called when the "dice" command is issued
-  function rollDice() {
-    const sides = 6;
-    return Math.floor(Math.random() * sides) + 1;
+  // COMMANDS
+  function cmd() {
+    return `Liste des commandes : \n
+    !dé <nombre>\n
+    !ca`;
+  }
+
+  // DE
+  function rollDice(sides) {
+    return `Vous avez obtenu un ${
+      Math.floor(Math.random() * sides) + 1
+    } (sur ${sides})`;
+  }
+
+  // CODE AMI
+  function ca() {
+    return "Code ami : SW-1007-3695-2904";
   }
 
   // Called every time the bot connects to Twitch chat
