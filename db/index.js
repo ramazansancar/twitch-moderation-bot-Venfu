@@ -8,7 +8,9 @@ const port = 3001;
 const URL_DATABASE = `http://127.0.0.1:${port}`;
 
 module.exports = {
+  initialized: false,
   init() {
+    if (module.exports.initialized) return;
     // Verify dbFile exist and has right metadata
     fs.readFile(path.join(__dirname, dbname), "utf8", (err, data) => {
       if (err) {
@@ -45,6 +47,7 @@ module.exports = {
         "0.0.0.0",
       ]
     );
+    module.exports.initialized = true;
     console.log("json-server listening on port 3001!");
   },
   get(o) {

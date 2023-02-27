@@ -2,8 +2,8 @@ module.exports = {
   initialized: false,
   client: null,
   init: (username, accessToken, channel) => {
+    if (module.exports.initialized) return;
     const tmi = require("tmi.js");
-
     // Define configuration options
     const opts = {
       identity: {

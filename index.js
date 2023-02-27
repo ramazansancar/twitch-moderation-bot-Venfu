@@ -125,17 +125,15 @@ app.get("/", function (req, res) {
     app.use(express.static(path.join(__dirname, "front")));
 
     // Start Chatbot commands
-    if (!vCommands.initialized) {
-      vCommands.init(
-        BOT_USERNAME,
-        req.session.passport.user.accessToken,
-        CHANNEL
-      );
-    }
+    vCommands.init(
+      BOT_USERNAME,
+      req.session.passport.user.accessToken,
+      CHANNEL
+    );
 
     // Start Websocket Client
-    if (!vWebSockets.sessionID) {
-      vWebSockets.init().then(() => {
+    vWebSockets.init().then(
+      () => {
         // Subscribe to Websockets Events
         vWebSockets.subscribeToFollowEvent(
           TWITCH_CLIENT_ID,
@@ -147,8 +145,11 @@ app.get("/", function (req, res) {
           req.session.passport.user.accessToken,
           req.session.passport.user.data[0].id
         );
-      });
-    }
+      },
+      (err) => {
+        console.log(err.message)
+      }
+    );
   } else {
     // If not connected then connect
     res.send(

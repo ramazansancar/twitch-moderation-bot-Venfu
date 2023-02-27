@@ -14,6 +14,10 @@ module.exports = {
   sessionID: "",
   init: () => {
     return new Promise((done, rej) => {
+      if (module.exports.sessionID) {
+        return rej(new Error("Ws already initialized"));
+      }
+
       const ws = new websocket(URL_WEBSOCKET);
 
       ws.on("message", (data) => {
