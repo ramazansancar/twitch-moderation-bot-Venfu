@@ -1,5 +1,6 @@
 var websocket = require("ws");
 var request = require("request");
+vDataBase = require("../db/index.js");
 
 const URL_EVENTS_SUBSCRIPTION =
   "https://api.twitch.tv/helix/eventsub/subscriptions";
@@ -11,15 +12,19 @@ module.exports = {
   sessionID: "",
   init: () => {
     return new Promise((done, rej) => {
-      
       const ws = new websocket(URL_WEBSOCKET);
-      
+
       ws.on("message", (data) => {
-        console.log("received: %s", data);
         data = JSON.parse(data);
         if (data.metadata.message_type === "session_welcome") {
           module.exports.sessionID = data.payload.session.id;
           done();
+        }
+        if (
+          data.metadata.message_type === "notification" &&
+          data.metadata.subscription_type === "channel.follow"
+        ) {
+          // TODO : new follow implementation
         }
       });
     });
@@ -44,9 +49,8 @@ module.exports = {
         "Client-Id": clientID,
       },
     };
-    // console.log("SEND => ", clientServerOptions);
     request(clientServerOptions, function (error, response) {
-      console.log(response.body);
+      console.log("Subscribe to Follow Events", response.body);
       return;
     });
   },

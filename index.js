@@ -11,6 +11,7 @@ var session = require("express-session");
 var passport = require("passport");
 var OAuth2Strategy = require("passport-oauth").OAuth2Strategy;
 var request = require("request");
+var path = require("path");
 
 // Export secrets to config file
 require("dotenv").config();
@@ -24,8 +25,13 @@ const URL_CALLBACK = "http://localhost:3000/auth/twitch/callback";
 const URL_TWITCH_AUTHORIZE = "https://id.twitch.tv/oauth2/authorize";
 const URL_TWITCH_TOKEN = "https://id.twitch.tv/oauth2/token";
 
+// Commands
 vCommands = require("./commands/index.js");
+// Websocket
 vWebSockets = require("./websocket-events/index.js");
+// Database
+vDataBase = require("./db/index.js");
+vDataBase.init();
 
 // Initialize Express and middlewares
 var app = express();
@@ -85,6 +91,8 @@ passport.use(
       //  done(err, user);
       //});
 
+      vDataBase.post("self", profile).then(() => {});
+
       done(null, profile);
     }
   )
@@ -110,13 +118,16 @@ app.get(
 // If user has an authenticated session, display it, otherwise display link to authenticate
 app.get("/", function (req, res) {
   if (req.session && req.session.passport && req.session.passport.user) {
-    // console.log(req.session.passport.user);
+    // Serve static files + index
+    res.sendFile(path.join(__dirname, "front", "index.html"));
+    app.use(express.static(path.join(__dirname, "front")));
 
-    res.send("");
-
+    // Start Chatbot commands
     vCommands(BOT_USERNAME, req.session.passport.user.accessToken, CHANNEL);
 
+    // Start Websocket Client
     vWebSockets.init().then(() => {
+      // Subscribe to Websockets Events
       vWebSockets.subscribeToFollowEvent(
         TWITCH_CLIENT_ID,
         req.session.passport.user.accessToken,
@@ -129,6 +140,7 @@ app.get("/", function (req, res) {
       );
     });
   } else {
+    // If not connected then connect
     res.send(
       `<html>
       <head>
