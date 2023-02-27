@@ -1,6 +1,6 @@
 var websocket = require("ws");
 var request = require("request");
-vDataBase = require("../db/index.js");
+var vDataBase = require("../db/index.js");
 var vQueue = require("../events/index.js");
 var vCommands = require("../commands/index.js");
 
@@ -26,7 +26,7 @@ module.exports = {
           data.metadata.message_type === "notification" &&
           data.metadata.subscription_type === "channel.follow"
         ) {
-          // TODO : new follow implementation
+          // TODO : new follow implementation (check bdd for only 1 notification)
           var message = `Merci pour le follow ${data.payload.event.user_name} ❤️❤️❤️`;
           vQueue.enqueue({
             type: "follow",

@@ -66,6 +66,7 @@ function cmd() {
 
 // DE
 function rollDice(sides) {
+  if (!sides) sides = 6;
   return `Vous avez obtenu un ${
     Math.floor(Math.random() * sides) + 1
   } (sur ${sides})`;
@@ -80,7 +81,7 @@ function ca() {
 function hug(from, to) {
   if (!to) to = "tous les viewers de la chaine";
   if (to.match(/^\@.*/gim)) to = to.substr(1);
-  return `${from} envoi un gros câlin à ${to} ! 🤗🤗🤗`;
+  return `${from} envoie un gros câlin à ${to} ! 🤗🤗🤗`;
 }
 
 // Called every time the bot connects to Twitch chat
