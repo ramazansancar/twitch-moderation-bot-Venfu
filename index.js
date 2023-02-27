@@ -11,17 +11,21 @@ var session = require("express-session");
 var passport = require("passport");
 var OAuth2Strategy = require("passport-oauth").OAuth2Strategy;
 var request = require("request");
-var handlebars = require("handlebars");
 
+// Export secrets to config file
 require("dotenv").config();
 const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID;
 const TWITCH_SECRET = process.env.TWITCH_SECRET;
 const SESSION_SECRET = process.env.SESSION_SECRET;
-const CALLBACK_URL = process.env.CALLBACK_URL;
 const BOT_USERNAME = process.env.BOT_USERNAME;
 const CHANNEL = process.env.CHANNEL;
 
+const URL_CALLBACK = "http://localhost:3000/auth/twitch/callback";
+const URL_TWITCH_AUTHORIZE = "https://id.twitch.tv/oauth2/authorize";
+const URL_TWITCH_TOKEN = "https://id.twitch.tv/oauth2/token";
+
 vCommands = require("./commands/index.js");
+vWebSockets = require("./websocket-events/index.js");
 
 // Initialize Express and middlewares
 var app = express();
@@ -65,11 +69,11 @@ passport.use(
   "twitch",
   new OAuth2Strategy(
     {
-      authorizationURL: "https://id.twitch.tv/oauth2/authorize",
-      tokenURL: "https://id.twitch.tv/oauth2/token",
+      authorizationURL: URL_TWITCH_AUTHORIZE,
+      tokenURL: URL_TWITCH_TOKEN,
       clientID: TWITCH_CLIENT_ID,
       clientSecret: TWITCH_SECRET,
-      callbackURL: CALLBACK_URL,
+      callbackURL: URL_CALLBACK,
       state: true,
     },
     function (accessToken, refreshToken, profile, done) {
@@ -89,7 +93,9 @@ passport.use(
 // Set route to start OAuth link, this is where you define scopes to request
 app.get(
   "/auth/twitch",
-  passport.authenticate("twitch", { scope: "user_read chat:read chat:edit" })
+  passport.authenticate("twitch", {
+    scope: ["user_read", "chat:read", "chat:edit", "moderator:read:followers"],
+  })
 );
 
 // Set route for OAuth redirect
@@ -101,22 +107,27 @@ app.get(
   })
 );
 
-// Define a simple template to safely generate HTML with values from user's profile
-var template = handlebars.compile(`
-<html><head><title>Twitch Auth Sample</title></head>
-<table>
-    <tr><th>Access Token</th><td>{{accessToken}}</td></tr>
-    <tr><th>Refresh Token</th><td>{{refreshToken}}</td></tr>
-    <tr><th>Display Name</th><td>{{display_name}}</td></tr>
-    <tr><th>Bio</th><td>{{bio}}</td></tr>
-    <tr><th>Image</th><td>{{logo}}</td></tr>
-</table></html>`);
-
 // If user has an authenticated session, display it, otherwise display link to authenticate
 app.get("/", function (req, res) {
   if (req.session && req.session.passport && req.session.passport.user) {
-    res.send(template(req.session.passport.user));
+    // console.log(req.session.passport.user);
+
+    res.send("");
+
     vCommands(BOT_USERNAME, req.session.passport.user.accessToken, CHANNEL);
+
+    vWebSockets.init().then(() => {
+      vWebSockets.subscribeToFollowEvent(
+        TWITCH_CLIENT_ID,
+        req.session.passport.user.accessToken,
+        req.session.passport.user.data[0].id
+      );
+      vWebSockets.subscribeToSubEvent(
+        TWITCH_CLIENT_ID,
+        req.session.passport.user.accessToken,
+        req.session.passport.user.data[0].id
+      );
+    });
   } else {
     res.send(
       `<html>
