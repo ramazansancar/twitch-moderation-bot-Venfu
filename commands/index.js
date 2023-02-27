@@ -42,11 +42,14 @@ function onMessageHandler(target, context, msg, self) {
   if (commandName === "!cmd") {
     module.exports.client.say(target, cmd());
   }
-  if (commandName === "!dé") {
-    module.exports.client.say(target, rollDice(6));
-  }
-  if (commandName.match(/^\!dé [0-9]*$/gim)) {
+  if (commandName.match(/^\!dé( [0-9]*)?$/gim)) {
     module.exports.client.say(target, rollDice(commandName.substr(4)));
+  }
+  if (commandName.match(/^\!hug( \@?[A-z1-9_]*)?$/gim)) {
+    module.exports.client.say(
+      target,
+      hug(context["display-name"], commandName.substr(5))
+    );
   }
   if (commandName === "!ca") {
     module.exports.client.say(target, ca());
@@ -55,9 +58,10 @@ function onMessageHandler(target, context, msg, self) {
 
 // COMMANDS
 function cmd() {
-  return `Liste des commandes : \n
-    !dé <nombre>\n
-    !ca`;
+  return `Liste des commandes : 
+    !dé <nombre> 🎲
+    !ca 🌐
+    !hug @ 🤗`;
 }
 
 // DE
@@ -70,6 +74,13 @@ function rollDice(sides) {
 // CODE AMI
 function ca() {
   return "Code ami : SW-1007-3695-2904";
+}
+
+// HUG
+function hug(from, to) {
+  if (!to) to = "tous les viewers de la chaine";
+  if (to.match(/^\@.*/gim)) to = to.substr(1);
+  return `${from} envoi un gros câlin à ${to} ! 🤗🤗🤗`;
 }
 
 // Called every time the bot connects to Twitch chat
