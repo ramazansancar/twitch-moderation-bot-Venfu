@@ -1,6 +1,8 @@
 var websocket = require("ws");
 var request = require("request");
 vDataBase = require("../db/index.js");
+var vQueue = require("../events/index.js");
+var vCommands = require("../commands/index.js");
 
 const URL_EVENTS_SUBSCRIPTION =
   "https://api.twitch.tv/helix/eventsub/subscriptions";
@@ -25,6 +27,13 @@ module.exports = {
           data.metadata.subscription_type === "channel.follow"
         ) {
           // TODO : new follow implementation
+          var message = `Merci pour le follow ${data.payload.event.user_name} ❤️❤️❤️`;
+          vQueue.enqueue({
+            type: "follow",
+            user: data.payload.event.user_id,
+            message,
+          });
+          vCommands.sendText(message);
         }
       });
     });

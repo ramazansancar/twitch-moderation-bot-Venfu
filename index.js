@@ -26,12 +26,14 @@ const URL_TWITCH_AUTHORIZE = "https://id.twitch.tv/oauth2/authorize";
 const URL_TWITCH_TOKEN = "https://id.twitch.tv/oauth2/token";
 
 // Commands
-vCommands = require("./commands/index.js");
+var vCommands = require("./commands/index.js");
 // Websocket
-vWebSockets = require("./websocket-events/index.js");
+var vWebSockets = require("./websocket-events/index.js");
 // Database
-vDataBase = require("./db/index.js");
+var vDataBase = require("./db/index.js");
 vDataBase.init();
+// Events Queue
+var vQueue = require("./events/index.js");
 
 // Initialize Express and middlewares
 var app = express();
@@ -123,22 +125,30 @@ app.get("/", function (req, res) {
     app.use(express.static(path.join(__dirname, "front")));
 
     // Start Chatbot commands
-    vCommands(BOT_USERNAME, req.session.passport.user.accessToken, CHANNEL);
+    if (!vCommands.initialized) {
+      vCommands.init(
+        BOT_USERNAME,
+        req.session.passport.user.accessToken,
+        CHANNEL
+      );
+    }
 
     // Start Websocket Client
-    vWebSockets.init().then(() => {
-      // Subscribe to Websockets Events
-      vWebSockets.subscribeToFollowEvent(
-        TWITCH_CLIENT_ID,
-        req.session.passport.user.accessToken,
-        req.session.passport.user.data[0].id
-      );
-      vWebSockets.subscribeToSubEvent(
-        TWITCH_CLIENT_ID,
-        req.session.passport.user.accessToken,
-        req.session.passport.user.data[0].id
-      );
-    });
+    if (!vWebSockets.sessionID) {
+      vWebSockets.init().then(() => {
+        // Subscribe to Websockets Events
+        vWebSockets.subscribeToFollowEvent(
+          TWITCH_CLIENT_ID,
+          req.session.passport.user.accessToken,
+          req.session.passport.user.data[0].id
+        );
+        vWebSockets.subscribeToSubEvent(
+          TWITCH_CLIENT_ID,
+          req.session.passport.user.accessToken,
+          req.session.passport.user.data[0].id
+        );
+      });
+    }
   } else {
     // If not connected then connect
     res.send(
@@ -154,6 +164,14 @@ app.get("/", function (req, res) {
       </html>`
     );
   }
+});
+
+app.get("/events", function (req, res) {
+  res.send(vQueue.dequeue());
+});
+
+app.get("/events/all", function (req, res) {
+  res.send(vQueue.printQueue());
 });
 
 app.listen(3000, function () {
